@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Our Little Corner 🌸</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap');
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --cream:#FDF8F3;--blush:#F5E6DC;--rose:#C4705A;--roseDark:#8B3F2A;--roseMid:#D4856E;
+  --ink:#2C1810;--inkMid:#5C3D30;--inkLight:#8B6055;--border:#E8D5C8;--white:#FFFCFA;
+  --green:#3D7A5C;--greenLight:#EBF3EE;--shadow:rgba(139,63,42,0.08);
+}
+html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;color:var(--ink)}
+body{display:flex;flex-direction:column;align-items:center}
+
+/* ── AUTH ── */
+#auth-screen{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  min-height:100vh;width:100%;max-width:420px;padding:40px 24px;text-align:center;
+}
+.auth-title{font-family:'DM Serif Display',serif;font-size:32px;color:var(--roseDark);margin-bottom:6px}
+.auth-sub{font-size:13px;color:var(--inkLight);margin-bottom:32px;line-height:1.6}
+.auth-card{background:var(--white);border:1px solid var(--border);border-radius:20px;padding:28px 24px;width:100%;box-shadow:0 4px 24px var(--shadow)}
+.auth-tabs{display:flex;border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:20px}
+.auth-tab{flex:1;padding:8px;font-size:13px;font-weight:500;border:none;background:transparent;cursor:pointer;font-family:'DM Sans',sans-serif;color:var(--inkLight);transition:all .2s}
+.auth-tab.active{background:var(--rose);color:#fff}
+.field{margin-bottom:14px;text-align:left}
+.field label{font-size:12px;color:var(--inkLight);display:block;margin-bottom:5px;font-weight:500;letter-spacing:0.3px}
+.field input,.field select{
+  width:100%;padding:10px 14px;border:1px solid var(--border);border-radius:10px;
+  font-family:'DM Sans',sans-serif;font-size:14px;color:var(--ink);background:var(--cream);outline:none;
+  transition:border .2s;
+}
+.field input:focus,.field select:focus{border-color:var(--roseMid)}
+.btn-primary{
+  width:100%;padding:12px;border:none;border-radius:12px;background:var(--rose);
+  color:#fff;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;cursor:pointer;
+  transition:background .2s;margin-top:4px;
+}
+.btn-primary:hover{background:var(--roseDark)}
+.btn-primary:disabled{opacity:.5;cursor:not-allowed}
+.auth-err{font-size:12px;color:var(--roseDark);margin-top:10px;min-height:18px}
+.auth-note{font-size:11px;color:var(--inkLight);margin-top:16px;line-height:1.5}
+
+/* ── APP SHELL ── */
+#app{display:none;flex-direction:column;width:100%;max-width:680px;min-height:100vh}
+.header{text-align:center;padding:28px 20px 20px;border-bottom:1px solid var(--border);background:var(--white)}
+.header-title{font-family:'DM Serif Display',serif;font-size:26px;color:var(--roseDark)}
+.header-meta{font-size:12px;color:var(--inkLight);margin-top:4px;display:flex;align-items:center;justify-content:center;gap:12px}
+.btn-logout{background:none;border:none;font-size:12px;color:var(--inkLight);cursor:pointer;text-decoration:underline;font-family:'DM Sans',sans-serif}
+
+/* ── TABS ── */
+.tabs{display:flex;border-bottom:1px solid var(--border);background:var(--white);position:sticky;top:0;z-index:10}
+.tab{flex:1;padding:13px 4px;font-size:12px;font-weight:500;color:var(--inkLight);border:none;border-bottom:2px solid transparent;background:transparent;cursor:pointer;transition:all .2s;font-family:'DM Sans',sans-serif;letter-spacing:0.2px}
+.tab.active{color:var(--rose);border-bottom-color:var(--rose)}
+.notif{display:none;width:7px;height:7px;background:var(--rose);border-radius:50%;margin-left:4px;vertical-align:middle}
+
+/* ── SECTIONS ── */
+.section{display:none;padding:20px;flex:1}
+.section.active{display:block}
+
+/* ── EXPLORE ── */
+.mood-bar{display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap}
+.mood-chip{padding:6px 14px;border-radius:16px;border:1px solid var(--border);font-size:12px;cursor:pointer;background:transparent;color:var(--inkMid);font-family:'DM Sans',sans-serif;transition:all .2s}
+.mood-chip.active{background:var(--rose);border-color:var(--rose);color:#fff}
+.topic-label{font-size:11px;font-weight:500;color:var(--inkLight);text-transform:uppercase;letter-spacing:1px;margin:0 0 10px}
+.q-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:20px}
+.q-card{background:var(--white);border:1px solid var(--border);border-radius:12px;padding:12px 14px;font-size:13px;color:var(--ink);cursor:pointer;transition:all .2s;line-height:1.4;text-align:left;font-family:'DM Sans',sans-serif}
+.q-card:hover{border-color:var(--roseMid);background:var(--blush)}
+.q-card.sent{border-color:var(--roseMid);background:#FDF0EB;color:var(--roseDark);opacity:.8;cursor:default}
+.explore-hint{font-size:12px;color:var(--inkLight);text-align:center;margin-top:4px}
+.arpit-note{background:#EBF3EE;border:1px solid #C8DDD2;border-radius:12px;padding:14px 16px;font-size:13px;color:#2D6045;line-height:1.5;margin-bottom:16px}
+
+/* ── ASK ── */
+.ask-card{background:var(--white);border:1px solid var(--border);border-radius:16px;padding:20px;margin-bottom:14px}
+.ask-label{font-size:13px;color:var(--inkMid);margin-bottom:10px;display:block;line-height:1.5}
+.ask-area{width:100%;border:1px solid var(--border);border-radius:10px;padding:12px;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--ink);background:var(--cream);resize:none;min-height:90px;outline:none;transition:border .2s}
+.ask-area:focus{border-color:var(--roseMid)}
+.btn-send{margin-top:10px;background:var(--rose);color:#fff;border:none;border-radius:20px;padding:10px 22px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer;transition:background .2s}
+.btn-send:hover{background:var(--roseDark)}
+.btn-send:disabled{opacity:.5;cursor:not-allowed}
+.ask-hint{font-size:12px;color:var(--inkLight);text-align:center}
+
+/* ── INBOX ── */
+.inbox-filter{display:flex;gap:8px;margin-bottom:16px}
+.filter-btn{padding:5px 12px;border-radius:12px;border:1px solid var(--border);font-size:12px;cursor:pointer;background:transparent;color:var(--inkMid);font-family:'DM Sans',sans-serif;transition:all .2s}
+.filter-btn.active{background:var(--roseDark);border-color:var(--roseDark);color:#fff}
+.msg-item{border-radius:14px;padding:14px 16px;margin-bottom:12px;border:1px solid var(--border);background:var(--white)}
+.msg-item.from-annu{background:#FDF0EB;border-color:#F0C8B8}
+.msg-item.from-arpit{background:var(--greenLight);border-color:#C8DDD2}
+.msg-who{font-size:11px;font-weight:500;letter-spacing:0.5px;margin-bottom:6px;text-transform:uppercase}
+.from-annu .msg-who{color:var(--rose)}
+.from-arpit .msg-who{color:var(--green)}
+.msg-q{font-size:14px;color:var(--ink);line-height:1.5}
+.msg-time{font-size:11px;color:var(--inkLight);margin-top:6px}
+.msg-reply-block{margin-top:10px;border-top:1px solid var(--border);padding-top:10px}
+.msg-reply-block textarea{width:100%;border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--ink);background:var(--white);resize:none;min-height:56px;outline:none;transition:border .2s}
+.msg-reply-block textarea:focus{border-color:var(--roseMid)}
+.btn-reply{margin-top:6px;background:var(--green);color:#fff;border:none;border-radius:14px;padding:7px 16px;font-family:'DM Sans',sans-serif;font-size:12px;cursor:pointer;font-weight:500}
+.msg-reply-text{margin-top:8px;font-size:13px;color:var(--inkMid);font-style:italic;line-height:1.5;border-left:2px solid var(--roseMid);padding-left:10px}
+.msg-waiting{font-size:11px;color:var(--inkLight);margin-top:8px;font-style:italic}
+.empty-state{text-align:center;padding:48px 20px;color:var(--inkLight)}
+.empty-icon{font-size:36px;margin-bottom:12px;opacity:.6}
+.empty-text{font-size:14px}
+.loading-text{text-align:center;padding:32px;font-size:13px;color:var(--inkLight)}
+
+/* ── QUIZ ── */
+.quiz-intro{font-size:13px;color:var(--inkMid);margin-bottom:18px;line-height:1.5}
+.quiz-card{background:var(--white);border:1px solid var(--border);border-radius:16px;padding:20px;margin-bottom:14px}
+.quiz-q{font-size:15px;color:var(--ink);margin-bottom:14px;line-height:1.4;font-weight:500}
+.quiz-opts{display:flex;flex-direction:column;gap:8px}
+.quiz-opt{padding:10px 14px;border:1.5px solid var(--border);border-radius:10px;font-size:13px;cursor:pointer;background:transparent;color:var(--inkMid);font-family:'DM Sans',sans-serif;text-align:left;transition:all .2s}
+.quiz-opt:hover:not(:disabled){border-color:var(--roseMid);background:var(--blush)}
+.quiz-opt.selected{border-color:var(--rose);background:#FDF0EB;color:var(--roseDark)}
+.quiz-opt:disabled{cursor:default}
+.quiz-result{margin-top:12px;font-size:12px;color:var(--inkMid);background:var(--cream);border-radius:10px;padding:10px 12px;line-height:1.5}
+.match-badge{display:inline-block;font-size:11px;font-weight:500;padding:3px 10px;border-radius:12px;margin-top:6px}
+.match-yes{background:#EBF3EE;color:var(--green)}
+.match-no{background:#FDF0EB;color:var(--roseDark)}
+.quiz-score{background:var(--white);border:1px solid var(--border);border-radius:16px;padding:20px;text-align:center;margin-bottom:14px}
+.quiz-score-num{font-family:'DM Serif Display',serif;font-size:40px;color:var(--roseDark)}
+.quiz-score-label{font-size:13px;color:var(--inkLight);margin-top:4px}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 20px;border-radius:20px;font-size:13px;opacity:0;pointer-events:none;transition:opacity .3s;z-index:999;white-space:nowrap}
+.toast.show{opacity:1}
+
+@media(max-width:480px){
+  .q-grid{grid-template-columns:1fr}
+  .tabs .tab{font-size:11px;padding:11px 2px}
+}
+</style>
+</head>
+<body>
+
+<!-- AUTH SCREEN -->
+<div id="auth-screen">
+  <div class="auth-title">Our Little Corner 🌸</div>
+  <div class="auth-sub">A private space for the two of you — questions, answers, and getting to know each other a little more.</div>
+
+  <div class="auth-card">
+    <div class="auth-tabs">
+      <button class="auth-tab active" onclick="showAuthTab('login')">Sign in</button>
+      <button class="auth-tab" onclick="showAuthTab('signup')">Create account</button>
+    </div>
+
+    <div id="login-form">
+      <div class="field"><label>Email</label><input type="email" id="login-email" placeholder="your@email.com"/></div>
+      <div class="field"><label>Password</label><input type="password" id="login-pass" placeholder="••••••••"/></div>
+      <button class="btn-primary" onclick="doLogin()">Sign in →</button>
+    </div>
+
+    <div id="signup-form" style="display:none">
+      <div class="field"><label>Your name</label><input type="text" id="signup-name" placeholder="e.g. Annu"/></div>
+      <div class="field"><label>You are</label>
+        <select id="signup-role">
+          <option value="annu">Annu (the one asking)</option>
+          <option value="arpit">Arpit (the one answering)</option>
+        </select>
+      </div>
+      <div class="field"><label>Email</label><input type="email" id="signup-email" placeholder="your@email.com"/></div>
+      <div class="field"><label>Password</label><input type="password" id="signup-pass" placeholder="at least 6 characters"/></div>
+      <button class="btn-primary" onclick="doSignup()">Create account →</button>
+      <p class="auth-note">Each person needs their own account. Share this link with Annu so she can sign up on her device.</p>
+    </div>
+
+    <div class="auth-err" id="auth-err"></div>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="app">
+  <div class="header">
+    <div class="header-title">Our Little Corner 🌸</div>
+    <div class="header-meta">
+      <span id="user-greeting"></span>
+      <button class="btn-logout" onclick="doLogout()">Sign out</button>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('explore')">Explore</button>
+    <button class="tab" onclick="switchTab('ask')" id="ask-tab-btn">Ask</button>
+    <button class="tab" onclick="switchTab('inbox')">Inbox <span class="notif" id="notif-dot">●</span></button>
+    <button class="tab" onclick="switchTab('quiz')">Together</button>
+  </div>
+
+  <!-- EXPLORE -->
+  <div class="section active" id="tab-explore">
+    <div class="mood-bar">
+      <button class="mood-chip active" onclick="setMood('all',this)">All topics</button>
+      <button class="mood-chip" onclick="setMood('light',this)">Light</button>
+      <button class="mood-chip" onclick="setMood('medium',this)">Medium</button>
+      <button class="mood-chip" onclick="setMood('deep',this)">Deep</button>
+    </div>
+    <div id="explore-content"></div>
+    <p class="explore-hint" id="explore-hint">Tap any question to send it privately to Arpit</p>
+  </div>
+
+  <!-- ASK -->
+  <div class="section" id="tab-ask">
+    <div class="ask-card">
+      <span class="ask-label">Something on your mind? Write it here — no pressure, no awkwardness. It goes straight to Arpit's inbox.</span>
+      <textarea class="ask-area" id="ask-input" placeholder="e.g. How do you handle stress when things get really difficult?"></textarea>
+      <button class="btn-send" id="ask-send-btn" onclick="sendQuestion()">Send quietly →</button>
+    </div>
+    <p class="ask-hint">Arpit will see this and reply whenever he's ready.</p>
+  </div>
+
+  <!-- INBOX -->
+  <div class="section" id="tab-inbox">
+    <div class="inbox-filter">
+      <button class="filter-btn active" onclick="setInboxFilter('all',this)">All</button>
+      <button class="filter-btn" onclick="setInboxFilter('unanswered',this)">Awaiting reply</button>
+      <button class="filter-btn" onclick="setInboxFilter('answered',this)">Answered</button>
+    </div>
+    <div id="inbox-content"><div class="loading-text">Loading messages…</div></div>
+  </div>
+
+  <!-- QUIZ -->
+  <div class="section" id="tab-quiz">
+    <p class="quiz-intro">Answer each question honestly — you'll see where you align and where you might want to talk more. Answers sync in real time.</p>
+    <div id="quiz-content"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// CONFIGURATION — replace these two values with yours
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+const SUPABASE_URL  = 'https://netwuxpycyuzqwdhgudd.supabase.co';
+const SUPABASE_ANON = 'sb_publishable_QhIhVT1jYt0pb7O6a60RPQ_DWeAWCTm';
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+
+let currentUser = null;
+let currentRole = null;  // 'annu' | 'arpit'
+let currentName = '';
+let allMessages = [];
+let quizAnswers = {};    // local user's answers loaded from db
+let inboxFilter = 'all';
+let sentCards = new Set();
+
+// ── QUESTIONS DATA ──
+const QUESTIONS = {
+  light:[
+    {t:'Family & home',qs:["What's a family tradition you'd love us to keep?","How often would you like us to visit each other's parents?","What does a typical Sunday look like for you?","Who handles cooking, finances, errands — how do you see it?"]},
+    {t:'Little things',qs:["What's your love language — how do you feel most cared for?","What's a small habit that would mean a lot to you?","How do you like to unwind after a hard day?","Morning person or night owl — what should I know?"]},
+  ],
+  medium:[
+    {t:'Life & values',qs:["How do you imagine dividing finances once we're married?","What role should religion or spirituality play in our home?","How many kids do you want — and when?","Would you be open to relocating for each other's careers?"]},
+    {t:'Conflicts & trust',qs:["How do you handle conflict — what helps you calm down?","What would feel like a betrayal of trust to you?","Are there topics you find hard to talk about — what helps?","How do you feel about sharing passwords or social media?"]},
+  ],
+  deep:[
+    {t:'Future & fears',qs:["What's your biggest fear about marriage?","What does a successful marriage look like to you in 20 years?","What's something from your past that still shapes you today?","Is there something you've been afraid to ask me?"]},
+  ],
+};
+
+const QUIZ_QS = [
+  {q:"How do you see major financial decisions being made?",opts:["Together — both must agree","Whoever manages money decides","Split by domain (you handle X, I handle Y)","We'll figure it out as we go"]},
+  {q:"How often should we have dedicated quality time, just the two of us?",opts:["Every day, even 30 minutes","A few times a week","Once a week is enough","As life allows — no pressure"]},
+  {q:"When we disagree, what should we do first?",opts:["Take space, come back to it","Talk it out right away","Write it down, then discuss","Hug first, talk second"]},
+  {q:"Where would you ideally like to live in 5 years?",opts:["Close to our families","Wherever career takes us","A new city — fresh start","Quieter, smaller town"]},
+  {q:"What should personal time look like in our marriage?",opts:["Total freedom, no questions","Regular check-ins are fine","Depends on the situation","We do most things together"]},
+];
+
+// ── AUTH ──
+function showAuthTab(t){
+  document.querySelectorAll('.auth-tab').forEach((b,i)=>b.classList.toggle('active',i===(t==='login'?0:1)));
+  document.getElementById('login-form').style.display = t==='login'?'block':'none';
+  document.getElementById('signup-form').style.display = t==='signup'?'block':'none';
+  document.getElementById('auth-err').textContent='';
+}
+
+async function doSignup(){
+  const name = document.getElementById('signup-name').value.trim();
+  const role = document.getElementById('signup-role').value;
+  const email = document.getElementById('signup-email').value.trim();
+  const pass = document.getElementById('signup-pass').value;
+  const errEl = document.getElementById('auth-err');
+  if(!name||!email||!pass){errEl.textContent='Please fill in all fields.';return;}
+  if(pass.length<6){errEl.textContent='Password must be at least 6 characters.';return;}
+  errEl.textContent='Creating account…';
+  const {data,error} = await sb.auth.signUp({email,password:pass,options:{data:{name,role}}});
+  if(error){errEl.textContent=error.message;return;}
+  errEl.textContent='Check your email to confirm your account, then sign in!';
+}
+
+async function doLogin(){
+  const email = document.getElementById('login-email').value.trim();
+  const pass = document.getElementById('login-pass').value;
+  const errEl = document.getElementById('auth-err');
+  if(!email||!pass){errEl.textContent='Please enter email and password.';return;}
+  errEl.textContent='Signing in…';
+  const {data,error} = await sb.auth.signInWithPassword({email,password:pass});
+  if(error){errEl.textContent=error.message;return;}
+}
+
+async function doLogout(){
+  await sb.auth.signOut();
+  window.location.reload();
+}
+
+sb.auth.onAuthStateChange(async(event,session)=>{
+  if(session?.user){
+    currentUser = session.user;
+    currentRole = session.user.user_metadata?.role || 'annu';
+    currentName = session.user.user_metadata?.name || 'Friend';
+    document.getElementById('auth-screen').style.display='none';
+    document.getElementById('app').style.display='flex';
+    document.getElementById('user-greeting').textContent = `Signed in as ${currentName}`;
+    // show/hide Ask tab (only Annu asks)
+    document.getElementById('ask-tab-btn').style.display = currentRole==='annu'?'':'none';
+    await loadInitialData();
+    subscribeToMessages();
+  }
+});
+
+// ── DATA LOADING ──
+async function loadInitialData(){
+  await loadMessages();
+  await loadQuizAnswers();
+  await loadSentCards();
+  renderExplore('all');
+  renderInbox();
+  renderQuiz();
+  updateNotif();
+}
+
+async function loadMessages(){
+  const {data,error} = await sb.from('messages').select('*').order('created_at',{ascending:false});
+  if(!error) allMessages = data||[];
+}
+
+async function loadSentCards(){
+  // load which explore cards Annu already sent
+  const {data} = await sb.from('messages').select('question_text').eq('sender_role','annu').eq('source','card');
+  if(data) data.forEach(m=>sentCards.add(m.question_text));
+}
+
+async function loadQuizAnswers(){
+  const {data} = await sb.from('quiz_answers').select('*').eq('user_id',currentUser.id);
+  if(data) data.forEach(r=>{quizAnswers[r.question_index]=r.answer_index;});
+}
+
+function subscribeToMessages(){
+  sb.channel('messages-channel')
+    .on('postgres_changes',{event:'*',schema:'public',table:'messages'},async()=>{
+      await loadMessages();
+      renderInbox();
+      updateNotif();
+    })
+    .subscribe();
+  sb.channel('quiz-channel')
+    .on('postgres_changes',{event:'*',schema:'public',table:'quiz_answers'},async()=>{
+      renderQuiz();
+    })
+    .subscribe();
+}
+
+// ── EXPLORE ──
+function setMood(m,el){
+  document.querySelectorAll('.mood-chip').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active');
+  renderExplore(m);
+}
+
+function renderExplore(mood){
+  const container = document.getElementById('explore-content');
+  const hint = document.getElementById('explore-hint');
+  if(currentRole==='arpit'){
+    container.innerHTML='<div class="arpit-note">This is Annu\'s space to browse and pick questions. When she taps one, it arrives in your Inbox. Check the Inbox tab to see and reply to her questions.</div>';
+    if(hint) hint.style.display='none';
+    return;
+  }
+  if(hint) hint.style.display='';
+  let topics = mood==='all'?[...QUESTIONS.light,...QUESTIONS.medium,...QUESTIONS.deep]:QUESTIONS[mood]||[];
+  container.innerHTML = topics.map(topic=>`
+    <div class="topic-label">${topic.t}</div>
+    <div class="q-grid">${topic.qs.map(q=>`
+      <button class="q-card${sentCards.has(q)?' sent':''}" onclick="sendCard(${JSON.stringify(q)},this)">${sentCards.has(q)?'✓ ':''}${q}</button>
+    `).join('')}</div>
+  `).join('');
+}
+
+async function sendCard(q, el){
+  if(sentCards.has(q)){showToast('Already sent!');return;}
+  el.disabled=true;
+  const {error} = await sb.from('messages').insert({
+    sender_role:'annu',
+    sender_name:currentName,
+    question_text:q,
+    source:'card',
+    reply_text:null,
+    user_id:currentUser.id,
+  });
+  if(error){showToast('Error — try again');el.disabled=false;return;}
+  sentCards.add(q);
+  el.classList.add('sent');
+  el.textContent='✓ '+q;
+  showToast('Sent to Arpit ✓');
+  updateNotif();
+}
+
+// ── ASK ──
+async function sendQuestion(){
+  const v = document.getElementById('ask-input').value.trim();
+  if(!v){showToast('Write something first');return;}
+  const btn = document.getElementById('ask-send-btn');
+  btn.disabled=true;
+  const {error} = await sb.from('messages').insert({
+    sender_role:'annu',
+    sender_name:currentName,
+    question_text:v,
+    source:'typed',
+    reply_text:null,
+    user_id:currentUser.id,
+  });
+  if(error){showToast('Error — try again');btn.disabled=false;return;}
+  document.getElementById('ask-input').value='';
+  btn.disabled=false;
+  showToast('Sent quietly ✓');
+}
+
+// ── INBOX ──
+function setInboxFilter(f,el){
+  inboxFilter=f;
+  document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
+  renderInbox();
+}
+
+function renderInbox(){
+  const container = document.getElementById('inbox-content');
+  let msgs = allMessages;
+  if(inboxFilter==='unanswered') msgs=msgs.filter(m=>!m.reply_text);
+  if(inboxFilter==='answered') msgs=msgs.filter(m=>!!m.reply_text);
+  if(msgs.length===0){
+    container.innerHTML=`<div class="empty-state"><div class="empty-icon">💌</div><div class="empty-text">${inboxFilter==='all'?'No messages yet — Annu can send from Explore or Ask':'No messages in this filter'}</div></div>`;
+    return;
+  }
+  container.innerHTML = msgs.map(m=>`
+    <div class="msg-item ${m.sender_role==='annu'?'from-annu':'from-arpit'}">
+      <div class="msg-who">${m.sender_role==='annu'?`${m.sender_name||'Annu'} asked`:'Arpit replied'}</div>
+      <div class="msg-q">${escHtml(m.question_text)}</div>
+      <div class="msg-time">${fmtTime(m.created_at)}</div>
+      ${m.reply_text?`<div class="msg-reply-text">${escHtml(m.reply_text)}</div>`:''}
+      ${!m.reply_text && currentRole==='arpit'?`
+        <div class="msg-reply-block">
+          <textarea id="rep-${m.id}" placeholder="Reply thoughtfully…" rows="2"></textarea>
+          <button class="btn-reply" onclick="submitReply('${m.id}')">Send reply →</button>
+        </div>
+      `:''}
+      ${!m.reply_text && currentRole==='annu'?`<div class="msg-waiting">Waiting for Arpit's reply…</div>`:''}
+    </div>
+  `).join('');
+}
+
+async function submitReply(id){
+  const el = document.getElementById('rep-'+id);
+  const v = el?el.value.trim():'';
+  if(!v){showToast('Write a reply first');return;}
+  el.disabled=true;
+  const {error} = await sb.from('messages').update({reply_text:v}).eq('id',id);
+  if(error){showToast('Error — try again');el.disabled=false;return;}
+  showToast('Reply sent ✓');
+}
+
+function updateNotif(){
+  // for arpit: show dot if there are unreplied messages
+  // for annu: show dot if there are new replies she hasn't read (simplified: any answered)
+  let show = false;
+  if(currentRole==='arpit') show = allMessages.some(m=>!m.reply_text);
+  if(currentRole==='annu') show = allMessages.some(m=>m.reply_text);
+  document.getElementById('notif-dot').style.display = show?'inline':'none';
+}
+
+// ── QUIZ ──
+async function renderQuiz(){
+  const container = document.getElementById('quiz-content');
+  // load other person's answers
+  let otherAnswers = {};
+  const {data} = await sb.from('quiz_answers').select('*').neq('user_id',currentUser.id||'x');
+  if(data) data.forEach(r=>{otherAnswers[r.question_index]=r.answer_index;});
+
+  // score
+  let matches=0;
+  let answered=0;
+  QUIZ_QS.forEach((_,qi)=>{
+    if(quizAnswers[qi]!==undefined && otherAnswers[qi]!==undefined){
+      answered++;
+      if(quizAnswers[qi]===otherAnswers[qi]) matches++;
+    }
+  });
+
+  let html = '';
+  if(answered>0){
+    html+=`<div class="quiz-score">
+      <div class="quiz-score-num">${matches}/${answered}</div>
+      <div class="quiz-score-label">questions where you chose the same answer</div>
+    </div>`;
+  }
+
+  html += QUIZ_QS.map((q,qi)=>{
+    const myAns = quizAnswers[qi];
+    const theirAns = otherAnswers[qi];
+    const showResult = myAns!==undefined && theirAns!==undefined;
+    return `<div class="quiz-card">
+      <div class="quiz-q">${q.q}</div>
+      <div class="quiz-opts">${q.opts.map((o,oi)=>{
+        let cls='quiz-opt';
+        if(myAns===oi) cls+=' selected';
+        return `<button class="${cls}" onclick="answerQuiz(${qi},${oi})" ${myAns!==undefined?'disabled':''}>${o}</button>`;
+      }).join('')}</div>
+      ${showResult?`<div class="quiz-result">
+        ${currentRole==='annu'?'Arpit':'Annu'} chose: <strong>${q.opts[theirAns]}</strong>
+        <br><span class="match-badge ${myAns===theirAns?'match-yes':'match-no'}">${myAns===theirAns?'You both chose the same ✓':'Different views — worth a chat'}</span>
+      </div>`:''}
+      ${myAns!==undefined && theirAns===undefined?`<div style="font-size:12px;color:var(--inkLight);margin-top:8px;font-style:italic">Waiting for ${currentRole==='annu'?'Arpit':'Annu'} to answer…</div>`:''}
+    </div>`;
+  }).join('');
+  container.innerHTML = html;
+}
+
+async function answerQuiz(qi,oi){
+  const {error} = await sb.from('quiz_answers').upsert({
+    user_id:currentUser.id,
+    question_index:qi,
+    answer_index:oi,
+    role:currentRole,
+  },{onConflict:'user_id,question_index'});
+  if(error){showToast('Error saving — try again');return;}
+  quizAnswers[qi]=oi;
+  renderQuiz();
+}
+
+// ── TABS ──
+function switchTab(t){
+  const tabNames=['explore','ask','inbox','quiz'];
+  document.querySelectorAll('.tab').forEach((b,i)=>b.classList.toggle('active',tabNames[i]===t));
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.getElementById('tab-'+t).classList.add('active');
+  if(t==='inbox') renderInbox();
+  if(t==='quiz') renderQuiz();
+}
+
+// ── HELPERS ──
+function fmtTime(ts){
+  if(!ts) return '';
+  const d = new Date(ts);
+  return d.toLocaleDateString('en-IN',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
+}
+function escHtml(s){
+  return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2200);
+}
+</script>
+</body>
+</html>
